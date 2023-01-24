@@ -114,12 +114,13 @@ void GameScene::set_selected_level(int lvl)
 	if (currentLdtkLevel->hasBgImage())
 	{
 		DebugUtils::println("Drawing background image");
-		auto img = currentLdtkLevel->getBgImage();
-		auto imgTex = LoadTexture(AppConstants::GetAssetPath(img.path.c_str()).c_str());
-		SetTextureFilter(imgTex, TEXTURE_FILTER_TRILINEAR);
+		auto backgroundPath = currentLdtkLevel->getBgImage();
+		auto backgroundTexture = LoadTexture(AppConstants::GetAssetPath(backgroundPath.path.c_str()).c_str());
+		SetTextureFilter(backgroundTexture, TEXTURE_FILTER_TRILINEAR);
 
 		// Draw texture and repeat it 5x5 times withing the specified rect
-		DrawTextureQuad(imgTex, {5, 5}, {0, 0}, {0, 0, GameConstants::WorldWidth, GameConstants::WorldHeight}, WHITE);
+		// TODO this texture should tile for the whole screen
+		DrawTextureV(backgroundTexture, {0, 0}, WHITE);
 	}
 
 	// draw all tileset layers
