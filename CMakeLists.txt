@@ -21,20 +21,20 @@ function(add_git_dependency libName gitURL gitHash)
     target_compile_options(${libName} PRIVATE "-w")
 endfunction()
 
-# Adding Raylib
+# Add Raylib
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
 set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # don't build the supplied example games
 add_git_dependency(
     raylib
     https://github.com/raysan5/raylib.git
-    d224414eb1fcbe93bcaf2ba02490bbd6f8db624a
+    542ef8904a2ce9d87ab53289026da7a715907b87
 )
 
 # Add LDtkLoader
 add_git_dependency(
     LDtkLoader
     https://github.com/Madour/LDtkLoader.git
-    88139ea4ebe4dcc1db91a69747b1a8040825a7aa
+    f232d9e13393bc30aebc972aab99b5fc76887466
 )
 
 # Add Box2d
@@ -49,7 +49,7 @@ add_git_dependency(
 add_git_dependency(
     fmt
     https://github.com/fmtlib/fmt.git
-    bfc0924eacaa3c6163eb872c8948098565464192
+    9409b2e4d8796a287fa1892540d6a8de4bb417cb
 )
 
 ##########################################################################################
