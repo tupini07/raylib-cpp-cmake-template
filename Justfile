@@ -4,7 +4,7 @@ help:
 build-with-config config:
 	@mkdir -p build 
 	@cd build && cmake ..
-	@cmake --build ./build --config {{config}} --target raylib-experiments -j 10 --
+	@cmake --build ./build --config {{config}} --target raylib-cpp-cmake-template -j 10 --
 
 build-debug:
 	@just build-with-config Debug
