@@ -48,4 +48,6 @@ following files:
 
 # Questions and comments
 
-If you have any question then feel free to [create a new discussion](https://github.com/tupini07/raylib-cpp-cmake-template/discussions/new), or if you see any issue then go ahead and [open a new issue](https://github.com/tupini07/raylib-cpp-cmake-template/issues/new).
+If you have any question then feel free to [create a new discussion](https://github.com/tupini07/raylib-cpp-cmake-template/discussions/new), or if you see any issue then go ahead and [open a new issue](https://github.com/tupini07/raylib-cpp-cmake-template/issues/new). 
+
+If you see anything that can be improved then feel free to make a PR! Those are always welcome 🙂
