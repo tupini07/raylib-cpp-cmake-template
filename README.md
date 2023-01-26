@@ -1,9 +1,11 @@
 # Raylib C++ Cmake Template
 
-<img 
-    src="https://user-images.githubusercontent.com/3422347/214886231-efaf580b-ffe6-44e0-b40b-ea8d84df3754.gif" 
-    style="width: 100%; max-width: 400px; margin: 2em auto; display: block;"
-/>
+<p align="center">
+    <img 
+        src="https://user-images.githubusercontent.com/3422347/214886231-efaf580b-ffe6-44e0-b40b-ea8d84df3754.gif" 
+        style="width: 100%; max-width: 400px;" width="400" align="center"
+    />
+</p>
 
 
 This repo constains a small game that you can use as a template for your Raylib
