@@ -1,4 +1,4 @@
-# Raylib C++ Cmake Template
+# Raylib C++ CMake Template
 
 <p align="center">
     <img 
@@ -9,16 +9,16 @@
 
 
 This repo constains a small game that you can use as a template for your Raylib
-games if you with to use C++ and Cmake.
+games if you with to use C++ and CMake.
 
-Cmake is configured to automatically download the dependencies of your game
+CMake is configured to automatically download the dependencies of your game
 through git, and pin them to a specific commit version (for example, [see how
 we're importing the raylib
 dependency](https://github.com/tupini07/raylib-cpp-cmake-template/blob/c6996a2477e713671337e4c40d1b602f10acb01a/CMakeLists.txt#L25-L31)).
 This provides a very flexible mechanism to include new dependencies, or update
 the existing ones, without having to muck about with your system's package
 manager, or worrying about linking external libraries at all. It is a bit slower
-on the first build though, since cmake will need to build everything.
+on the first build though, since CMake will need to build everything.
 
 For the moment, the project is using the following dependencies which should be
 useful in many games:
