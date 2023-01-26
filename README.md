@@ -36,7 +36,9 @@ following files:
 - [[SceneManager](https://github.com/tupini07/raylib-cpp-cmake-template/blob/c6996a2477e713671337e4c40d1b602f10acb01a/sources/scenes/SceneManager.hpp)]
   Implements an extremly simple scene manager. It updates and draws the current
   scene or switches to a new scene if necessary.
-- [[TitleScene](https://github.com/tupini07/raylib-cpp-cmake-template/blob/c6996a2477e713671337e4c40d1b602f10acb01a/sources/scenes/TitleScene/TitleScene.cpp)] This is the main screen that is shown when the game starts. It doesn't contain much, just a keypress listener to move switch on to the actual GameScene.
+- [[TitleScene](https://github.com/tupini07/raylib-cpp-cmake-template/blob/c6996a2477e713671337e4c40d1b602f10acb01a/sources/scenes/TitleScene/TitleScene.cpp)]
+  This is the main screen that is shown when the game starts. It doesn't contain
+  much, just a keypress listener to switch on to the actual GameScene.
 - [[GameScene](https://github.com/tupini07/raylib-cpp-cmake-template/blob/c6996a2477e713671337e4c40d1b602f10acb01a/sources/scenes/GameScene/GameScene.cpp)]
   This is the scene where the main _game_ happens. It's not really a game per
   se, just a showcase of how you would set up a
