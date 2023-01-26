@@ -118,9 +118,14 @@ void GameScene::set_selected_level(int lvl)
 		auto backgroundTexture = LoadTexture(AppConstants::GetAssetPath(backgroundPath.path.c_str()).c_str());
 		SetTextureFilter(backgroundTexture, TEXTURE_FILTER_TRILINEAR);
 
-		// Draw texture and repeat it 5x5 times withing the specified rect
-		// TODO this texture should tile for the whole screen
-		DrawTextureV(backgroundTexture, {0, 0}, WHITE);
+		// tile background texture to cover the whole frame buffer
+		for (int i = 0; i <= (GameConstants::WorldWidth / backgroundTexture.width); i++)
+		{
+			for (int j = 0; j <= (GameConstants::WorldHeight / backgroundTexture.height); j++)
+			{
+				DrawTextureV(backgroundTexture, {float(i * backgroundTexture.width), float(j * backgroundTexture.height)}, WHITE);
+			}
+		}
 	}
 
 	// draw all tileset layers
