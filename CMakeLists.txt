@@ -10,10 +10,10 @@ include(FetchContent)
 # Add dependencies with FetchContent
 ##########################################################################################
 
-function(add_git_dependency libName gitURL gitHash)
+function(add_git_dependency libName gitURL gitTag)
     FetchContent_Declare(${libName}
         GIT_REPOSITORY ${gitURL}
-        GIT_TAG        ${gitHash}
+        GIT_TAG        ${gitTag}
         GIT_SHALLOW    TRUE
         GIT_PROGRESS   TRUE
     )
@@ -27,14 +27,14 @@ set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # don't build the supplied example g
 add_git_dependency(
     raylib
     https://github.com/raysan5/raylib.git
-    542ef8904a2ce9d87ab53289026da7a715907b87
+    4.2.0
 )
 
 # Add LDtkLoader
 add_git_dependency(
     LDtkLoader
     https://github.com/Madour/LDtkLoader.git
-    f232d9e13393bc30aebc972aab99b5fc76887466
+    1.2.1
 )
 
 # Add Box2d
@@ -42,14 +42,14 @@ set(BOX2D_BUILD_TESTBED OFF CACHE BOOL "" FORCE)
 add_git_dependency(
     box2d
     https://github.com/erincatto/box2d.git
-    23c5d60668dc84e731e1f700188df4e3aaa9b5f6
+    v2.4.1
 )
 
 # Add {fmt} library
 add_git_dependency(
     fmt
     https://github.com/fmtlib/fmt.git
-    9409b2e4d8796a287fa1892540d6a8de4bb417cb
+    9.1.0
 )
 
 ##########################################################################################
