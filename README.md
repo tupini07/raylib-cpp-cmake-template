@@ -30,6 +30,8 @@ useful in many games:
 - [fmt](https://github.com/fmtlib/fmt) - logging and string formatting library
   that makes your life much easier.
 
+If you don't know where to start or how to use this template then check out [the wiki](https://github.com/tupini07/raylib-cpp-cmake-template/wiki)!
+
 ## Important files
 
 You can get a good understanding of how things work by reading through the
@@ -58,4 +60,4 @@ following files:
 
 If you have any question then feel free to [create a new discussion](https://github.com/tupini07/raylib-cpp-cmake-template/discussions/new), or if you see any issue then go ahead and [open a new issue](https://github.com/tupini07/raylib-cpp-cmake-template/issues/new). 
 
-If you see anything that can be improved then feel free to make a PR! Those are always welcome 🙂
+If you see anything that can be improved then feel free to make a PR! Those are always welcome 🙂 Another welcomed contribution is that of going through the wiki and clarifying content or adding new things you think might be helpful for others.
