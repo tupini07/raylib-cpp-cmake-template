@@ -9,7 +9,7 @@
 
 
 This repo constains a small game that you can use as a template for your Raylib
-games if you with to use C++ and CMake.
+games if you wish to use C++ and CMake.
 
 CMake is configured to automatically download the dependencies of your game
 through git, and pin them to a specific commit version (for example, [see how
