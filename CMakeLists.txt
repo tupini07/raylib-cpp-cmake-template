@@ -27,14 +27,14 @@ set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # don't build the supplied example g
 add_git_dependency(
     raylib
     https://github.com/raysan5/raylib.git
-    4.2.0
+    4.5.0
 )
 
 # Add LDtkLoader
 add_git_dependency(
     LDtkLoader
     https://github.com/Madour/LDtkLoader.git
-    1.2.1
+    1.2.2
 )
 
 # Add Box2d
