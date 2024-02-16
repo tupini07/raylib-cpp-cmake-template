@@ -34,7 +34,7 @@ add_git_dependency(
 add_git_dependency(
     LDtkLoader
     https://github.com/Madour/LDtkLoader.git
-    1.2.2
+    1.5.3
 )
 
 # Add Box2d
