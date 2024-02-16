@@ -49,7 +49,7 @@ add_git_dependency(
 add_git_dependency(
     fmt
     https://github.com/fmtlib/fmt.git
-    9.1.0
+    10.2.1
 )
 
 ##########################################################################################
