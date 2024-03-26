@@ -34,11 +34,12 @@ GameScene::GameScene()
 GameScene::~GameScene()
 {
 	delete ldtkProject;
-	delete ldtkWorld;
+	// delete ldtkWorld;  // world is a reference to ldtkProject so we don't need to delete it
 	delete player;
 	delete world;
 
 	ldtkProject = nullptr;
+	ldtkWorld = nullptr;
 
 	UnloadTexture(renderedLevelTexture);
 	UnloadTexture(currentTilesetTexture);
