@@ -5,10 +5,12 @@
 #include "GameScene/GameScene.hpp"
 #include "Scenes.hpp"
 
+#include <memory>
+
 class SceneManager
 {
 private:
-	static BaseScene *current_screen;
+	static std::unique_ptr<BaseScene> current_screen;
 
 public:
 	static void set_current_screen(Scenes screen);
@@ -19,7 +21,7 @@ public:
 	static void cleanup();
 };
 
-BaseScene *SceneManager::current_screen = nullptr;
+std::unique_ptr<BaseScene> SceneManager::current_screen = nullptr;
 
 void SceneManager::initialize()
 {
@@ -33,11 +35,7 @@ void SceneManager::set_current_screen(Scenes screen)
 		return;
 	}
 
-	if (SceneManager::current_screen != nullptr)
-	{
-		delete SceneManager::current_screen;
-		SceneManager::current_screen = nullptr;
-	}
+	SceneManager::current_screen.reset();
 
 	switch (screen)
 	{
@@ -45,10 +43,10 @@ void SceneManager::set_current_screen(Scenes screen)
 		SceneManager::current_screen = nullptr;
 		break;
 	case TITLE:
-		SceneManager::current_screen = new TitleScene();
+		SceneManager::current_screen = std::make_unique<TitleScene>();
 		break;
 	case GAME:
-		SceneManager::current_screen = new GameScene();
+		SceneManager::current_screen = std::make_unique<GameScene>();
 		break;
 	case NONE:
 		std::cerr << "Landed in NONE case for switch. This should never happen!" << std::endl;
@@ -80,7 +78,6 @@ void SceneManager::cleanup()
 {
 	if (SceneManager::current_screen != nullptr)
 	{
-		delete SceneManager::current_screen;
 		SceneManager::current_screen = nullptr;
 	}
 }

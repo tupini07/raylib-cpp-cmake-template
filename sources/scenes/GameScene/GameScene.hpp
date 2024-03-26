@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory> 
 #include <box2d/box2d.h>
 #include <raylib.h>
 #include <LDtkLoader/Project.hpp>
@@ -16,7 +17,7 @@ class GameScene : public BaseScene
 private:
     int current_level;
 
-    ldtk::Project *ldtkProject{};
+    std::unique_ptr<ldtk::Project> ldtkProject;
     const ldtk::World *ldtkWorld{};
     const ldtk::Level *currentLdtkLevel{};
 
@@ -27,8 +28,8 @@ public:
     GameScene();
     ~GameScene();
 
-    static b2World *world;
-    static Player *player;
+    static std::unique_ptr<b2World> world;
+    static std::unique_ptr<Player> player;
 
     void draw() override;
     Scenes update(float dt) override;

@@ -170,7 +170,7 @@ void Player::check_if_on_floor()
 		target.y += 1.1;
 
 		is_touching_floor = RaycastCheckCollisionWithUserData(
-			GameScene::world,
+			GameScene::world.get(),
 			source,
 			target,
 			PhysicsTypes::SolidBlock);
@@ -198,7 +198,7 @@ bool Player::can_move_in_x_direction(bool moving_right)
 		target.x += (moving_right ? 1 : -1) * 1.1;
 
 		auto is_agains_wall = RaycastCheckCollisionWithUserData(
-			GameScene::world,
+			GameScene::world.get(),
 			source,
 			target,
 			PhysicsTypes::SolidBlock);

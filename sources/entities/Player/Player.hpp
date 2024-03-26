@@ -2,6 +2,7 @@
 
 #include "../BaseEntity.hpp"
 
+#include <memory>
 #include <unordered_map>
 #include <vector>
 

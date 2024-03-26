@@ -1,3 +1,4 @@
+#include <memory> 
 #include <raylib.h>
 #include <box2d/box2d.h>
 #include <LDtkLoader/Project.hpp>
@@ -15,13 +16,13 @@
 
 using namespace std;
 
-Player *GameScene::player = nullptr;
-b2World *GameScene::world = nullptr;
+std::unique_ptr<Player> GameScene::player = nullptr;
+std::unique_ptr<b2World> GameScene::world = nullptr;
 
 GameScene::GameScene()
 {
-	player = new Player();
-	ldtkProject = new ldtk::Project();
+    player = std::make_unique<Player>();
+    ldtkProject = std::make_unique<ldtk::Project>();
 
 	ldtkProject->loadFromFile(AppConstants::GetAssetPath("world.ldtk"));
 
@@ -33,14 +34,6 @@ GameScene::GameScene()
 
 GameScene::~GameScene()
 {
-	delete ldtkProject;
-	// delete ldtkWorld;  // world is a reference to ldtkProject so we don't need to delete it
-	delete player;
-	delete world;
-
-	ldtkProject = nullptr;
-	ldtkWorld = nullptr;
-
 	UnloadTexture(renderedLevelTexture);
 	UnloadTexture(currentTilesetTexture);
 }
@@ -55,7 +48,7 @@ void GameScene::draw()
 	player->draw();
 
 	// DEBUG stuff
-	DebugUtils::draw_physics_objects_bounding_boxes(world);
+	DebugUtils::draw_physics_objects_bounding_boxes(world.get());
 }
 
 Scenes GameScene::update(float dt)
@@ -83,12 +76,11 @@ void GameScene::set_selected_level(int lvl)
 	{
 		// if we had an old world then delete it and recreate
 		// a new one for the new level
-		delete world;
 		world = nullptr;
 	}
 
 	b2Vec2 gravity(0.0f, 60.0f);
-	world = new b2World(gravity);
+    world = std::make_unique<b2World>(gravity);
 
 	current_level = lvl;
 
@@ -168,7 +160,7 @@ void GameScene::set_selected_level(int lvl)
 		DebugUtils::println("  - {}", entity.getName());
 		if (entity.getName() == "Player")
 		{
-			player->init_for_level(&entity, world);
+			player->init_for_level(&entity, world.get());
 		}
 
 		if (entity.getName() == "Portal")
