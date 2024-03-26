@@ -58,7 +58,7 @@ Player::Player()
 
 Player::~Player()
 {
-	UnloadTexture(sprite);
+	UnloadTexture(this->sprite);
 }
 
 void Player::update(float dt)
