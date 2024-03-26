@@ -34,7 +34,7 @@ add_git_dependency(
 add_git_dependency(
     LDtkLoader
     https://github.com/Madour/LDtkLoader.git
-    1.5.3
+    1.5.3.1
 )
 
 # Add Box2d
@@ -70,7 +70,7 @@ target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_INCLUDE})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
-target_link_libraries(${PROJECT_NAME} PRIVATE LDtkLoader)
+target_link_libraries(${PROJECT_NAME} PRIVATE LDtkLoader::LDtkLoader)
 target_link_libraries(${PROJECT_NAME} PRIVATE box2d)
 target_link_libraries(${PROJECT_NAME} PRIVATE fmt)
 
