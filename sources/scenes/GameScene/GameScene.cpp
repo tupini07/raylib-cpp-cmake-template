@@ -38,19 +38,6 @@ GameScene::~GameScene()
 	UnloadTexture(currentTilesetTexture);
 }
 
-void GameScene::draw()
-{
-	ClearBackground(RAYWHITE);
-	DrawTextureRec(renderedLevelTexture,
-				   {0, 0, (float)renderedLevelTexture.width, (float)-renderedLevelTexture.height},
-				   {0, 0}, WHITE);
-
-	player->draw();
-
-	// DEBUG stuff
-	DebugUtils::draw_physics_objects_bounding_boxes(world.get());
-}
-
 Scenes GameScene::update(float dt)
 {
 	const float timeStep = 1.0f / 60.0f;
@@ -62,6 +49,19 @@ Scenes GameScene::update(float dt)
 	player->update(dt);
 
 	return Scenes::NONE;
+}
+
+void GameScene::draw()
+{
+	ClearBackground(RAYWHITE);
+	DrawTextureRec(renderedLevelTexture,
+				   {0, 0, (float)renderedLevelTexture.width, (float)-renderedLevelTexture.height},
+				   {0, 0}, WHITE);
+
+	player->draw();
+
+	// DEBUG stuff
+	DebugUtils::draw_physics_objects_bounding_boxes(world.get());
 }
 
 void GameScene::set_selected_level(int lvl)
@@ -87,8 +87,8 @@ void GameScene::set_selected_level(int lvl)
 	currentLdtkLevel = &ldtkWorld->getLevel(current_level);
 
 	DebugUtils::println("----------------------------------------------");
-	DebugUtils::print("Loaded LDTK map with {}  levels in it", ldtkWorld->allLevels().size());
-	DebugUtils::print("The loaded level is {} and it has {} layers", current_level, currentLdtkLevel->allLayers().size());
+	DebugUtils::println("Loaded LDTK map with {}  levels in it", ldtkWorld->allLevels().size());
+	DebugUtils::println("The loaded level is {} and it has {} layers", current_level, currentLdtkLevel->allLayers().size());
 	for (auto &&layer : currentLdtkLevel->allLayers())
 	{
 		DebugUtils::print("  - {}", layer.getName());
