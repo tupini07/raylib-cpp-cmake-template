@@ -58,7 +58,7 @@ namespace DebugUtils
     inline void print(fmt::format_string<T...> fmt, T &&...args)
     {
 #ifdef DEBUG
-        fmt::print(fmt, args...);
+        fmt::print(fmt::runtime(fmt), args...);
 #endif
     }
 
@@ -66,7 +66,7 @@ namespace DebugUtils
     inline void println(fmt::format_string<T...> fmt, T &&...args)
     {
 #ifdef DEBUG
-        auto formatted = fmt::format(fmt, args...);
+        auto formatted = fmt::format(fmt::runtime(fmt), args...);
         cout << formatted << endl;
 #endif
     }
