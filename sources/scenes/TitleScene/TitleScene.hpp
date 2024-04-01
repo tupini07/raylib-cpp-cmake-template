@@ -12,6 +12,5 @@ public:
 	TitleScene();
 	~TitleScene();
 
-	void draw() override;
-	Scenes update(float dt) override;
+	Scenes tick(float dt) override;
 };

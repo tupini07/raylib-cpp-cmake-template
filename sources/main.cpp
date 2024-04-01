@@ -2,7 +2,11 @@
 #include <emscripten/emscripten.h>
 #endif
 
+#define RAYGUI_IMPLEMENTATION
+
 #include <raylib.h>
+#include <raygui.h>
+
 #include <Constants.hpp>
 
 #include "entities/Player/Player.hpp"
@@ -18,6 +22,8 @@ int main()
 		AppConstants::ScreenWidth,
 		AppConstants::ScreenHeight,
 		AppConstants::WindowTitle.c_str());
+
+	GuiLoadStyleDefault();
 
 	frameBuffer = LoadRenderTexture(GameConstants::WorldWidth, GameConstants::WorldHeight);
 
@@ -46,7 +52,6 @@ int main()
 void UpdateDrawFrame()
 {
 	float dt = GetFrameTime();
-	SceneManager::update(dt);
 
 	if (IsKeyDown(KEY_Q))
 	{
@@ -54,17 +59,23 @@ void UpdateDrawFrame()
 		return;
 	}
 
-	BeginTextureMode(frameBuffer);
-	ClearBackground(WHITE);
-
-	SceneManager::draw();
-	EndTextureMode();
-
 	BeginDrawing();
-	// NOTE: Render texture must be y-flipped due to default OpenGL coordinates (left-bottom)
-	DrawTexturePro(frameBuffer.texture,
-				   {0, 0, (float)frameBuffer.texture.width, -(float)frameBuffer.texture.height},
-				   {0, 0, AppConstants::ScreenWidth, AppConstants::ScreenHeight},
-				   {0, 0}, 0, WHITE);
+	SceneManager::tick(dt);
 	EndDrawing();
+
+	//BeginTextureMode(frameBuffer);
+	//ClearBackground(WHITE);
+
+	//SceneManager::draw();
+
+	//EndTextureMode();
+
+	//BeginDrawing();
+	//// NOTE: Render texture must be y-flipped due to default OpenGL coordinates (left-bottom)
+	//DrawTexturePro(frameBuffer.texture,
+	//	Rectangle{ 0, 0, (float)frameBuffer.texture.width, -(float)frameBuffer.texture.height },
+	//	Rectangle{ 0, 0, AppConstants::ScreenWidth, AppConstants::ScreenHeight },
+	//	Vector2{ 0, 0 },
+	//	0, WHITE);
+	//EndDrawing();
 }

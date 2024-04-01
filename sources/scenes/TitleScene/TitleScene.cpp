@@ -1,8 +1,11 @@
 #include <string>
 
 #include <raylib.h>
+#include <raygui.h>
 
 #include <Constants.hpp>
+#include <utils/DebugUtils.hpp>
+
 #include "TitleScene.hpp"
 #include "../Scenes.hpp"
 
@@ -18,44 +21,36 @@ TitleScene::~TitleScene()
 	UnloadTexture(texture);
 }
 
-
-Scenes TitleScene::update(float dt)
+Scenes TitleScene::tick(float dt)
 {
-	if (IsKeyPressed(KEY_C))
+	// TODO: weird that we have a Draw in Update ... Perhaps unify draw and update?
+	if (GuiButton(Rectangle{10, 70, 140, 50}, "Click to start"))
 	{
 		return Scenes::GAME;
 	}
 
-	return Scenes::NONE;
-}
-
-void TitleScene::draw()
-{
 	ClearBackground(RAYWHITE);
 
-	auto draw_with_backdrop = [](const string& text, int x, int y, int fontSize, Color color, Color backdropColor) {
+	auto draw_with_backdrop = [](const string &text, int x, int y, int fontSize, Color color, Color backdropColor)
+	{
 		DrawText(text.c_str(), x + 1, y + 1, fontSize, backdropColor);
 		DrawText(text.c_str(), x, y, fontSize, color);
 	};
 
-	draw_with_backdrop("Press 'c' to play!", 10, 10, 30, GOLD, BLACK);
+	draw_with_backdrop("This is the Title Scene", 10, 10, 50, GOLD, BLACK);
 
+	const int texture_x = AppConstants::ScreenWidth / 2 - texture.width;
+	const int texture_y = AppConstants::ScreenHeight / 2 - texture.height;
+	DrawTextureEx(texture, Vector2{(float)texture_x, (float)texture_y}, 0, 2, WHITE);
 
-	const int texture_x = GameConstants::WorldWidth / 2 - texture.width / 2;
-	const int texture_y = GameConstants::WorldHeight / 2 - texture.height / 2;
-	DrawTexture(texture, texture_x, texture_y, WHITE);
+	int mouseX = GetMouseX();
+	int mouseY = GetMouseY();
 
-	const string text = "This is the Title Scene";
-	const int text_width = MeasureText(text.c_str(), 20);
-	DrawText(text.c_str(), GameConstants::WorldWidth / 2 - text_width / 2, texture_y + texture.height + 20, 20, BLACK);
-
-	int mouseX = GetMouseX() / ScreenScale;
-	int mouseY = GetMouseY() / ScreenScale;
-
-	int rectSize = GameConstants::WorldWidth / 20;
+	int rectSize = AppConstants::ScreenWidth / 20;
 	DrawRectangle(mouseX - rectSize / 2, mouseY - rectSize / 2, rectSize, rectSize, DARKPURPLE);
 
-	DrawLine(mouseX, 0, mouseX, GameConstants::WorldHeight, SKYBLUE);
-	DrawLine(0, mouseY, GameConstants::WorldWidth, mouseY, GREEN);
-}
+	DrawLine(mouseX, 0, mouseX, AppConstants::ScreenHeight, SKYBLUE);
+	DrawLine(0, mouseY, AppConstants::ScreenWidth, mouseY, GREEN);
 
+	return Scenes::NONE;
+}

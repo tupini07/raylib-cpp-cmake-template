@@ -1,4 +1,4 @@
-#include <memory> 
+#include <memory>
 #include <raylib.h>
 #include <box2d/box2d.h>
 #include <LDtkLoader/Project.hpp>
@@ -21,8 +21,8 @@ std::unique_ptr<b2World> GameScene::world = nullptr;
 
 GameScene::GameScene()
 {
-    player = std::make_unique<Player>();
-    ldtkProject = std::make_unique<ldtk::Project>();
+	player = std::make_unique<Player>();
+	ldtkProject = std::make_unique<ldtk::Project>();
 
 	ldtkProject->loadFromFile(AppConstants::GetAssetPath("world.ldtk"));
 
@@ -38,21 +38,15 @@ GameScene::~GameScene()
 	UnloadTexture(currentTilesetTexture);
 }
 
-Scenes GameScene::update(float dt)
+Scenes GameScene::tick(float dt)
 {
 	const float timeStep = 1.0f / 60.0f;
 	const int32 velocityIterations = 6;
 	const int32 positionIterations = 2;
 
 	world->Step(timeStep, velocityIterations, positionIterations);
-
 	player->update(dt);
 
-	return Scenes::NONE;
-}
-
-void GameScene::draw()
-{
 	ClearBackground(RAYWHITE);
 	DrawTextureRec(renderedLevelTexture,
 				   {0, 0, (float)renderedLevelTexture.width, (float)-renderedLevelTexture.height},
@@ -62,6 +56,8 @@ void GameScene::draw()
 
 	// DEBUG stuff
 	DebugUtils::draw_physics_objects_bounding_boxes(world.get());
+
+	return Scenes::NONE;
 }
 
 void GameScene::set_selected_level(int lvl)
@@ -80,7 +76,7 @@ void GameScene::set_selected_level(int lvl)
 	}
 
 	b2Vec2 gravity(0.0f, 60.0f);
-    world = std::make_unique<b2World>(gravity);
+	world = std::make_unique<b2World>(gravity);
 
 	current_level = lvl;
 
