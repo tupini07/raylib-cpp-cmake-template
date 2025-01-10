@@ -17,7 +17,7 @@
 using namespace std;
 
 std::unique_ptr<Player> GameScene::player = nullptr;
-std::unique_ptr<b2World> GameScene::world = nullptr;
+b2WorldId GameScene::worldId = b2_nullWorldId;
 
 GameScene::GameScene()
 {
@@ -36,15 +36,24 @@ GameScene::~GameScene()
 {
 	UnloadTexture(renderedLevelTexture);
 	UnloadTexture(currentTilesetTexture);
+
+	if (!B2_IS_NULL(worldId))
+	{
+		b2DestroyWorld(worldId);
+	}
 }
 
 Scenes GameScene::tick(float dt)
 {
 	const float timeStep = 1.0f / 60.0f;
-	const int32 velocityIterations = 6;
-	const int32 positionIterations = 2;
+	const int subStepCount = 4;
+	;
 
-	world->Step(timeStep, velocityIterations, positionIterations);
+	// world->Step(timeStep, velocityIterations, positionIterations);
+	if (!B2_IS_NULL(worldId))
+	{
+		b2World_Step(worldId, timeStep, subStepCount);
+	}
 	player->update(dt);
 
 	ClearBackground(RAYWHITE);
@@ -55,7 +64,7 @@ Scenes GameScene::tick(float dt)
 	player->draw();
 
 	// DEBUG stuff
-	DebugUtils::draw_physics_objects_bounding_boxes(world.get());
+	DebugUtils::draw_physics_objects_bounding_boxes(worldId);
 
 	return Scenes::NONE;
 }
@@ -68,15 +77,17 @@ void GameScene::set_selected_level(int lvl)
 		UnloadTexture(currentTilesetTexture);
 	}
 
-	if (world != nullptr)
+	if (!B2_IS_NULL(worldId))
 	{
+		b2DestroyWorld(worldId);
 		// if we had an old world then delete it and recreate
 		// a new one for the new level
-		world = nullptr;
+		worldId = b2_nullWorldId;
 	}
 
-	b2Vec2 gravity(0.0f, 60.0f);
-	world = std::make_unique<b2World>(gravity);
+	auto worldDef = b2DefaultWorldDef();
+	worldDef.gravity = (b2Vec2){0.0f, 60.0f};
+	worldId = b2CreateWorld(&worldDef);
 
 	current_level = lvl;
 
@@ -156,7 +167,7 @@ void GameScene::set_selected_level(int lvl)
 		DebugUtils::println("  - {}", entity.getName());
 		if (entity.getName() == "Player")
 		{
-			player->init_for_level(&entity, world.get());
+			player->init_for_level(&entity);
 		}
 
 		if (entity.getName() == "Portal")
@@ -168,6 +179,7 @@ void GameScene::set_selected_level(int lvl)
 
 	// create solid blocks on level
 	DebugUtils::println("Loading solid blocks in level:");
+	int c = 0;
 	for (auto &&entity : currentLdtkLevel->getLayer("PhysicsEntities").allEntities())
 	{
 		// box2d width and height start from the center of the box
@@ -177,18 +189,17 @@ void GameScene::set_selected_level(int lvl)
 		auto centerX = entity.getPosition().x + b2width;
 		auto centerY = entity.getPosition().y + b2height;
 
-		b2BodyDef bodyDef;
-		bodyDef.userData.pointer = (uintptr_t)PhysicsTypes::SolidBlock.c_str();
-		bodyDef.position.Set(centerX / GameConstants::PhysicsWorldScale,
-							 centerY / GameConstants::PhysicsWorldScale);
+		auto bodyDef = b2DefaultBodyDef();
+		bodyDef.position = {centerX / GameConstants::PhysicsWorldScale,
+							centerY / GameConstants::PhysicsWorldScale};
+		// bodyDef.fixedRotation = true;
+		bodyDef.userData = (void *)PhysicsTypes::SolidBlock.c_str();
+		auto bodyId = b2CreateBody(worldId, &bodyDef);
 
-		b2Body *body = world->CreateBody(&bodyDef);
-
-		b2PolygonShape groundBox;
-		groundBox.SetAsBox(b2width / GameConstants::PhysicsWorldScale,
-						   b2height / GameConstants::PhysicsWorldScale);
-
-		body->CreateFixture(&groundBox, 0.0f);
+		b2Polygon dynamicBox = b2MakeBox(b2width / GameConstants::PhysicsWorldScale,
+										 b2height / GameConstants::PhysicsWorldScale);
+		b2ShapeDef shapeDef = b2DefaultShapeDef();
+		b2CreatePolygonShape(bodyId, &shapeDef, &dynamicBox);
 
 		DebugUtils::println("  - x:{} y:{} width:{} height:{}",
 							centerX,

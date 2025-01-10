@@ -25,7 +25,7 @@ class Player : public BaseEntity
 {
 private:
     Texture2D sprite;
-    b2Body *body{};
+    b2BodyId body;
     b2Vec2 level_spawn_position;
 
     bool is_touching_floor = true;
@@ -56,5 +56,5 @@ public:
     void update(float dt) override;
     void draw() override;
 
-    void init_for_level(const ldtk::Entity *entity, b2World *physicsWorld);
+    void init_for_level(const ldtk::Entity *entity);
 };

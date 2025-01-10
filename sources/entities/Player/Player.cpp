@@ -73,7 +73,7 @@ void Player::update(float dt)
 	}
 
 	// dampen horizontal movement
-	set_velocity_x(body->GetLinearVelocity().x * (1 - dt * horizontalDampeningFactor));
+	set_velocity_x(b2Body_GetLinearVelocity(body).x * (1 - dt * horizontalDampeningFactor));
 
 	check_if_on_floor();
 	check_if_move();
@@ -84,8 +84,8 @@ void Player::update(float dt)
 
 void Player::draw()
 {
-	auto spritePosX = (body->GetPosition().x * GameConstants::PhysicsWorldScale) - 12;
-	auto spritePosY = (body->GetPosition().y * GameConstants::PhysicsWorldScale) - 13;
+	auto spritePosX = (b2Body_GetPosition(body).x * GameConstants::PhysicsWorldScale) - 12;
+	auto spritePosY = (b2Body_GetPosition(body).y * GameConstants::PhysicsWorldScale) - 13;
 
 	auto current_anim_states = animation_map[anim_state];
 	auto current_anim_rect = current_anim_states[current_anim_frame % current_anim_states.size()];
@@ -103,7 +103,7 @@ void Player::draw()
 				   WHITE);
 }
 
-void Player::init_for_level(const ldtk::Entity *entity, b2World *physicsWorld)
+void Player::init_for_level(const ldtk::Entity *entity)
 {
 	auto pos = entity->getPosition();
 
@@ -112,43 +112,32 @@ void Player::init_for_level(const ldtk::Entity *entity, b2World *physicsWorld)
 	level_spawn_position = {(float)pos.x / GameConstants::PhysicsWorldScale,
 							(float)pos.y / GameConstants::PhysicsWorldScale};
 
-	b2BodyDef bodyDef;
+	auto bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = level_spawn_position;
 	bodyDef.fixedRotation = true;
-	bodyDef.position.Set(level_spawn_position.x, level_spawn_position.y);
+	this->body = b2CreateBody(GameScene::worldId, &bodyDef);
 
-	this->body = physicsWorld->CreateBody(&bodyDef);
-
-	b2PolygonShape dynamicBox;
-	dynamicBox.SetAsBox(0.9, 1);
-
-	b2FixtureDef fixtureDef;
-	fixtureDef.shape = &dynamicBox;
-	fixtureDef.density = 1.0f;
-	fixtureDef.friction = 10.0f;
-
-	body->CreateFixture(&fixtureDef);
+	b2Polygon dynamicBox = b2MakeBox(0.9, 1);
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	shapeDef.density = 1.0f;
+	shapeDef.friction = 10.0f;
+	b2CreatePolygonShape(this->body, &shapeDef, &dynamicBox);
 }
 
 void Player::set_velocity_x(float vx)
 {
-	body->SetLinearVelocity({
-		vx,
-		body->GetLinearVelocity().y,
-	});
+	b2Body_SetLinearVelocity(body, {vx, b2Body_GetLinearVelocity(body).y});
 }
 
 void Player::set_velocity_y(float vy)
 {
-	body->SetLinearVelocity({
-		body->GetLinearVelocity().x,
-		vy,
-	});
+	b2Body_SetLinearVelocity(body, {b2Body_GetLinearVelocity(body).x, vy});
 }
 
 void Player::set_velocity_xy(float vx, float vy)
 {
-	body->SetLinearVelocity({vx, vy});
+	b2Body_SetLinearVelocity(body, {vx, vy});
 }
 
 void Player::check_if_on_floor()
@@ -162,15 +151,15 @@ void Player::check_if_on_floor()
 	for (auto x_dev : x_deviations)
 	{
 		// query raylib to see if we're touching floor
-		auto source = body->GetPosition();
+		auto source = b2Body_GetPosition(body);
 		source.x += x_dev;
 
-		auto target = body->GetPosition();
+		auto target = b2Body_GetPosition(body);
 		target.x += x_dev;
 		target.y += 1.1;
 
 		is_touching_floor = RaycastCheckCollisionWithUserData(
-			GameScene::world.get(),
+			GameScene::worldId,
 			source,
 			target,
 			PhysicsTypes::SolidBlock);
@@ -188,17 +177,17 @@ bool Player::can_move_in_x_direction(bool moving_right)
 	for (auto y_dev : y_deviations)
 	{
 		// query raylib to see if we're touching floor
-		auto source = body->GetPosition();
+		auto source = b2Body_GetPosition(body);
 		source.y += y_dev;
 
-		auto target = body->GetPosition();
+		auto target = b2Body_GetPosition(body);
 		target.y += y_dev;
 
 		// check left side if necessary
 		target.x += (moving_right ? 1 : -1) * 1.1;
 
 		auto is_agains_wall = RaycastCheckCollisionWithUserData(
-			GameScene::world.get(),
+			GameScene::worldId,
 			source,
 			target,
 			PhysicsTypes::SolidBlock);
@@ -219,7 +208,7 @@ void Player::check_if_jump()
 		set_velocity_y(-25);
 	}
 
-	if (abs(body->GetLinearVelocity().x) > 0)
+	if (abs(b2Body_GetLinearVelocity(body).x) > 0)
 	{
 		anim_state = WALK;
 	}
@@ -230,7 +219,7 @@ void Player::check_if_jump()
 
 	if (!is_touching_floor)
 	{
-		auto vel = body->GetLinearVelocity().y;
+		auto vel = b2Body_GetLinearVelocity(body).y;
 		const int jump_threshold = 5;
 
 		if (vel > jump_threshold)
@@ -266,13 +255,13 @@ void Player::check_if_move()
 
 void Player::check_if_should_respawn()
 {
-	auto body_pos = body->GetPosition();
+	auto body_pos = b2Body_GetPosition(body);
 	auto is_out_of_x = body_pos.x < 0 || body_pos.x * GameConstants::PhysicsWorldScale > GameConstants::WorldWidth;
 	auto is_out_of_y = body_pos.y < 0 || body_pos.y * GameConstants::PhysicsWorldScale > GameConstants::WorldHeight;
 
 	if (is_out_of_x || is_out_of_y)
 	{
 		set_velocity_xy(0, 0);
-		body->SetTransform(level_spawn_position, 0);
+		b2Body_SetTransform(body, level_spawn_position, {0, 0});
 	}
 }

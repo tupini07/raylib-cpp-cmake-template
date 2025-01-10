@@ -57,7 +57,7 @@ set(BOX2D_BUILD_TESTBED OFF CACHE BOOL "" FORCE)
 add_git_dependency(
     box2d
     https://github.com/erincatto/box2d.git
-    v2.4.1
+    v3.0.0
 )
 
 # Add {fmt} library

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <memory> 
+#include <memory>
 #include <box2d/box2d.h>
 #include <raylib.h>
 #include <LDtkLoader/Project.hpp>
@@ -28,7 +28,7 @@ public:
     GameScene();
     ~GameScene();
 
-    static std::unique_ptr<b2World> world;
+    static b2WorldId worldId;
     static std::unique_ptr<Player> player;
 
     Scenes tick(float dt) override;

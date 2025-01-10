@@ -5,38 +5,34 @@
 
 using namespace std;
 
-class RaysCastGetNearestCallback : public b2RayCastCallback
+struct RayCastContext
 {
-public:
-    RaysCastGetNearestCallback() : m_fixture(NULL)
-    {
-    }
-
-    float ReportFixture(b2Fixture *fixture, const b2Vec2 &point, const b2Vec2 &normal, float fraction)
-    {
-        m_fixture = fixture;
-        m_point = point;
-        m_normal = normal;
-        m_fraction = fraction;
-        return fraction;
-    }
-
-    b2Fixture *m_fixture;
-    b2Vec2 m_point;
-    b2Vec2 m_normal;
-    float m_fraction;
+    b2ShapeId shapeId;
+    b2Vec2 point;
+    b2Vec2 normal;
+    float fraction;
 };
 
-b2Fixture *RaycastGetFirstFixtureFromSourceToTarget(b2World *world, b2Vec2 source, b2Vec2 target)
+float RayCastCallback(b2ShapeId shapeId, b2Vec2 point, b2Vec2 normal, float fraction, void *context)
 {
-    // query raylib to see if we're touching floor
-    RaysCastGetNearestCallback raycastCallback;
+    RayCastContext *myContext = static_cast<RayCastContext *>(context);
+    myContext->shapeId = shapeId;
+    myContext->point = point;
+    myContext->normal = normal;
+    myContext->fraction = fraction;
+    return fraction;
+}
 
-    GameScene::world->RayCast(&raycastCallback,
-                              source,
-                              target);
+RayCastContext RaycastGetFirstFixtureFromSourceToTarget(b2WorldId worldId, b2Vec2 source, b2Vec2 target)
+{
 
-    return raycastCallback.m_fixture;
+    b2Vec2 translation = b2Sub(target, source);
+    auto viewFilter = b2DefaultQueryFilter();
+    RayCastContext context = {0};
+
+    b2World_CastRay(worldId, source, translation, viewFilter, RayCastCallback, &context);
+
+    return context;
 }
 
 /**
@@ -50,16 +46,17 @@ b2Fixture *RaycastGetFirstFixtureFromSourceToTarget(b2World *world, b2Vec2 sourc
  * @return true
  * @return false
  */
-bool RaycastCheckCollisionWithUserData(b2World *world, b2Vec2 source, b2Vec2 target, string expected_user_data)
+bool RaycastCheckCollisionWithUserData(b2WorldId worldId, b2Vec2 source, b2Vec2 target, string expected_user_data)
 {
-    auto fixture = RaycastGetFirstFixtureFromSourceToTarget(world, source, target);
-    if (fixture)
+    auto context = RaycastGetFirstFixtureFromSourceToTarget(worldId, source, target);
+    if (B2_IS_NON_NULL(context.shapeId))
     {
-        auto collision_body = fixture->GetBody();
+        auto body = b2Shape_GetBody(context.shapeId);
+        auto userData = b2Body_GetUserData(body);
 
-        if (collision_body->GetUserData().pointer)
+        if (userData)
         {
-            string body_user_data = (char *)collision_body->GetUserData().pointer;
+            string body_user_data = (char *)userData;
             return body_user_data == expected_user_data;
         }
     }
