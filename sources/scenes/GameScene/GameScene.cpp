@@ -37,7 +37,7 @@ GameScene::~GameScene()
 	UnloadTexture(renderedLevelTexture);
 	UnloadTexture(currentTilesetTexture);
 
-	if (!B2_IS_NULL(worldId))
+	if (B2_IS_NON_NULL(worldId))
 	{
 		b2DestroyWorld(worldId);
 	}
@@ -50,7 +50,7 @@ Scenes GameScene::tick(float dt)
 	;
 
 	// world->Step(timeStep, velocityIterations, positionIterations);
-	if (!B2_IS_NULL(worldId))
+	if (B2_IS_NON_NULL(worldId))
 	{
 		b2World_Step(worldId, timeStep, subStepCount);
 	}
@@ -77,7 +77,7 @@ void GameScene::set_selected_level(int lvl)
 		UnloadTexture(currentTilesetTexture);
 	}
 
-	if (!B2_IS_NULL(worldId))
+	if (B2_IS_NON_NULL(worldId))
 	{
 		b2DestroyWorld(worldId);
 		// if we had an old world then delete it and recreate
@@ -179,7 +179,6 @@ void GameScene::set_selected_level(int lvl)
 
 	// create solid blocks on level
 	DebugUtils::println("Loading solid blocks in level:");
-	int c = 0;
 	for (auto &&entity : currentLdtkLevel->getLayer("PhysicsEntities").allEntities())
 	{
 		// box2d width and height start from the center of the box
@@ -196,9 +195,18 @@ void GameScene::set_selected_level(int lvl)
 		bodyDef.userData = (void *)PhysicsTypes::SolidBlock.c_str();
 		auto bodyId = b2CreateBody(worldId, &bodyDef);
 
+		if (B2_IS_NULL(bodyId))
+		{
+			DebugUtils::println("Error: body is null");
+			return;
+		}
+
 		b2Polygon dynamicBox = b2MakeBox(b2width / GameConstants::PhysicsWorldScale,
 										 b2height / GameConstants::PhysicsWorldScale);
+
 		b2ShapeDef shapeDef = b2DefaultShapeDef();
+		shapeDef.density = 1.0f;
+		shapeDef.friction = 0.3f;
 		b2CreatePolygonShape(bodyId, &shapeDef, &dynamicBox);
 
 		DebugUtils::println("  - x:{} y:{} width:{} height:{}",
@@ -207,4 +215,6 @@ void GameScene::set_selected_level(int lvl)
 							b2width,
 							b2height);
 	}
+
+	DebugUtils::println("Level loaded");
 }

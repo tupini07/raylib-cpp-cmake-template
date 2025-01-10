@@ -16,6 +16,7 @@ namespace DebugUtils
     inline void draw_physics_objects_bounding_boxes(b2WorldId worldId)
     {
 #ifdef DEBUG
+        // TODO: how do we get the body list in 3.0!?
         // auto currentBody = world->GetBodyList();
         // while (currentBody != nullptr)
         // {

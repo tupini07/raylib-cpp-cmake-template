@@ -80,6 +80,8 @@ void Player::update(float dt)
 	check_if_jump();
 
 	check_if_should_respawn();
+
+	DebugUtils::println("Player position: x:{} y:{}", b2Body_GetPosition(body).x, b2Body_GetPosition(body).y);
 }
 
 void Player::draw()
@@ -106,23 +108,39 @@ void Player::draw()
 void Player::init_for_level(const ldtk::Entity *entity)
 {
 	auto pos = entity->getPosition();
+	pos.x += entity->getSize().x / 2;
+	pos.y += entity->getSize().y / 2;
 
 	DebugUtils::println("Setting player position to x:{} and y:{}", pos.x, pos.y);
 
 	level_spawn_position = {(float)pos.x / GameConstants::PhysicsWorldScale,
 							(float)pos.y / GameConstants::PhysicsWorldScale};
 
-	auto bodyDef = b2DefaultBodyDef();
+	if (B2_IS_NULL(GameScene::worldId))
+	{
+		DebugUtils::println("Error: worldId is null");
+		return;
+	}
+
+	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
 	bodyDef.position = level_spawn_position;
-	bodyDef.fixedRotation = true;
 	this->body = b2CreateBody(GameScene::worldId, &bodyDef);
 
-	b2Polygon dynamicBox = b2MakeBox(0.9, 1);
+	if (B2_IS_NULL(this->body))
+	{
+		DebugUtils::println("Error: body is null");
+		return;
+	}
+
+	b2Polygon dynamicBox = b2MakeBox(0.9f, 1.0f);
+
 	b2ShapeDef shapeDef = b2DefaultShapeDef();
 	shapeDef.density = 1.0f;
 	shapeDef.friction = 10.0f;
 	b2CreatePolygonShape(this->body, &shapeDef, &dynamicBox);
+
+	DebugUtils::println("Player initialized at x:{} and y:{}", level_spawn_position.x, level_spawn_position.y);
 }
 
 void Player::set_velocity_x(float vx)
@@ -262,6 +280,7 @@ void Player::check_if_should_respawn()
 	if (is_out_of_x || is_out_of_y)
 	{
 		set_velocity_xy(0, 0);
-		b2Body_SetTransform(body, level_spawn_position, {0, 0});
+		auto currentRot = b2Body_GetRotation(body);
+		b2Body_SetTransform(body, level_spawn_position, currentRot);
 	}
 }
