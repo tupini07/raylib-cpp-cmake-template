@@ -15,7 +15,6 @@ private:
 public:
 	static void set_current_screen(Scenes screen);
 	static void initialize();
-
 	static void tick(float dt);
 	static void cleanup();
 };

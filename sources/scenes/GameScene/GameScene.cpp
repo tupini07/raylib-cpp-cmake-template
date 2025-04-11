@@ -48,10 +48,11 @@ Scenes GameScene::tick(float dt)
 	player->update(dt);
 
 	ClearBackground(RAYWHITE);
+	
 	DrawTextureRec(renderedLevelTexture,
-				   {0, 0, (float)renderedLevelTexture.width, (float)-renderedLevelTexture.height},
-				   {0, 0}, WHITE);
-
+				{0, 0, (float)renderedLevelTexture.width, (float)-renderedLevelTexture.height},
+				{0, 0}, WHITE);
+	
 	player->draw();
 
 	// DEBUG stuff

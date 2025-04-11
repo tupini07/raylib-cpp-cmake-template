@@ -6,5 +6,6 @@ class BaseScene
 {
 public:
     virtual ~BaseScene() = default;
+    
     virtual Scenes tick(float dt) = 0;
 };

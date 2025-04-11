@@ -14,7 +14,7 @@
 #include "scenes/Scenes.hpp"
 
 void UpdateDrawFrame();
-RenderTexture2D frameBuffer;
+RenderTexture2D gameRenderTexture; // Render texture for the game world
 
 int main()
 {
@@ -25,7 +25,8 @@ int main()
 
 	GuiLoadStyleDefault();
 
-	frameBuffer = LoadRenderTexture(GameConstants::WorldWidth, GameConstants::WorldHeight);
+	// Create render texture at game resolution (not screen resolution)
+	gameRenderTexture = LoadRenderTexture(GameConstants::WorldWidth, GameConstants::WorldHeight);
 
 	SceneManager::initialize();
 	SceneManager::set_current_screen(Scenes::TITLE);
@@ -44,7 +45,7 @@ int main()
 #endif
 
 	SceneManager::cleanup();
-	UnloadRenderTexture(frameBuffer);
+	UnloadRenderTexture(gameRenderTexture);
 	CloseWindow();
 	return 0;
 }
@@ -59,23 +60,19 @@ void UpdateDrawFrame()
 		return;
 	}
 
-	BeginDrawing();
+	BeginTextureMode(gameRenderTexture);
+	ClearBackground(RAYWHITE);
+	
 	SceneManager::tick(dt);
+	
+	EndTextureMode();
+
+	BeginDrawing();
+	ClearBackground(BLACK);
+	
+	Rectangle source = { 0.0f, 0.0f, (float)gameRenderTexture.texture.width, (float)-gameRenderTexture.texture.height };
+	Rectangle dest = { 0.0f, 0.0f, AppConstants::ScreenWidth, AppConstants::ScreenHeight };
+	DrawTexturePro(gameRenderTexture.texture, source, dest, Vector2{ 0, 0 }, 0.0f, WHITE);
+	
 	EndDrawing();
-
-	//BeginTextureMode(frameBuffer);
-	//ClearBackground(WHITE);
-
-	//SceneManager::draw();
-
-	//EndTextureMode();
-
-	//BeginDrawing();
-	//// NOTE: Render texture must be y-flipped due to default OpenGL coordinates (left-bottom)
-	//DrawTexturePro(frameBuffer.texture,
-	//	Rectangle{ 0, 0, (float)frameBuffer.texture.width, -(float)frameBuffer.texture.height },
-	//	Rectangle{ 0, 0, AppConstants::ScreenWidth, AppConstants::ScreenHeight },
-	//	Vector2{ 0, 0 },
-	//	0, WHITE);
-	//EndDrawing();
 }
