@@ -31,8 +31,7 @@ public:
     static std::unique_ptr<b2World> world;
     static std::unique_ptr<Player> player;
 
-    void draw() override;
-    Scenes update(float dt) override;
+    Scenes tick(float dt) override;
 
     void set_selected_level(int lvl);
 };

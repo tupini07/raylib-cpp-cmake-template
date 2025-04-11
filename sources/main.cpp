@@ -2,7 +2,11 @@
 #include <emscripten/emscripten.h>
 #endif
 
+#define RAYGUI_IMPLEMENTATION
+
 #include <raylib.h>
+#include <raygui.h>
+
 #include <Constants.hpp>
 
 #include "entities/Player/Player.hpp"
@@ -10,7 +14,7 @@
 #include "scenes/Scenes.hpp"
 
 void UpdateDrawFrame();
-RenderTexture2D frameBuffer;
+RenderTexture2D gameRenderTexture; // Render texture for the game world
 
 int main()
 {
@@ -19,7 +23,10 @@ int main()
 		AppConstants::ScreenHeight,
 		AppConstants::WindowTitle.c_str());
 
-	frameBuffer = LoadRenderTexture(GameConstants::WorldWidth, GameConstants::WorldHeight);
+	GuiLoadStyleDefault();
+
+	// Create render texture at game resolution (not screen resolution)
+	gameRenderTexture = LoadRenderTexture(GameConstants::WorldWidth, GameConstants::WorldHeight);
 
 	SceneManager::initialize();
 	SceneManager::set_current_screen(Scenes::TITLE);
@@ -38,7 +45,7 @@ int main()
 #endif
 
 	SceneManager::cleanup();
-	UnloadRenderTexture(frameBuffer);
+	UnloadRenderTexture(gameRenderTexture);
 	CloseWindow();
 	return 0;
 }
@@ -46,7 +53,6 @@ int main()
 void UpdateDrawFrame()
 {
 	float dt = GetFrameTime();
-	SceneManager::update(dt);
 
 	if (IsKeyDown(KEY_Q))
 	{
@@ -54,17 +60,19 @@ void UpdateDrawFrame()
 		return;
 	}
 
-	BeginTextureMode(frameBuffer);
-	ClearBackground(WHITE);
-
-	SceneManager::draw();
+	BeginTextureMode(gameRenderTexture);
+	ClearBackground(RAYWHITE);
+	
+	SceneManager::tick(dt);
+	
 	EndTextureMode();
 
 	BeginDrawing();
-	// NOTE: Render texture must be y-flipped due to default OpenGL coordinates (left-bottom)
-	DrawTexturePro(frameBuffer.texture,
-				   {0, 0, (float)frameBuffer.texture.width, -(float)frameBuffer.texture.height},
-				   {0, 0, AppConstants::ScreenWidth, AppConstants::ScreenHeight},
-				   {0, 0}, 0, WHITE);
+	ClearBackground(BLACK);
+	
+	Rectangle source = { 0.0f, 0.0f, (float)gameRenderTexture.texture.width, (float)-gameRenderTexture.texture.height };
+	Rectangle dest = { 0.0f, 0.0f, AppConstants::ScreenWidth, AppConstants::ScreenHeight };
+	DrawTexturePro(gameRenderTexture.texture, source, dest, Vector2{ 0, 0 }, 0.0f, WHITE);
+	
 	EndDrawing();
 }

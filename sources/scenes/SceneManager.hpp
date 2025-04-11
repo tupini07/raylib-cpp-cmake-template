@@ -15,9 +15,7 @@ private:
 public:
 	static void set_current_screen(Scenes screen);
 	static void initialize();
-
-	static void update(float dt);
-	static void draw();
+	static void tick(float dt);
 	static void cleanup();
 };
 
@@ -54,23 +52,15 @@ void SceneManager::set_current_screen(Scenes screen)
 	}
 }
 
-void SceneManager::update(float dt)
+void SceneManager::tick(float dt)
 {
 	if (SceneManager::current_screen != nullptr)
 	{
-		Scenes result = SceneManager::current_screen->update(dt);
+		Scenes result = SceneManager::current_screen->tick(dt);
 		if (result != NONE)
 		{
 			SceneManager::set_current_screen(result);
 		}
-	}
-}
-
-void SceneManager::draw()
-{
-	if (SceneManager::current_screen != nullptr)
-	{
-		SceneManager::current_screen->draw();
 	}
 }
 
