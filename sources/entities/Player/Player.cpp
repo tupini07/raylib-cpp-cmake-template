@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <vector>
 #include <math.h>
+#include <cstring>
 
 #include <raylib.h>
 #include <box2d/box2d.h>
@@ -10,6 +11,7 @@
 
 #include <Constants.hpp>
 #include <utils/DebugUtils.hpp>
+#include <utils/Camera.hpp>
 
 #include "Player.hpp"
 #include "../../physics/PhysicsTypes.hpp"
@@ -20,259 +22,441 @@ using namespace std;
 
 Player::Player()
 {
-	this->sprite = LoadTexture(AppConstants::GetAssetPath("dinoCharactersVersion1.1/sheets/DinoSprites - vita.png").c_str());
+    this->sprite = LoadTexture(AppConstants::GetAssetPath("dinoCharactersVersion1.1/sheets/DinoSprites - vita.png").c_str());
 
-	auto make_player_frame_rect = [](float frame_num) -> Rectangle
-	{
-		return {
-			.x = frame_num * 24.0f,
-			.y = 0.0f,
-			.width = 24.0f,
-			.height = 24.0f};
-	};
+    auto make_player_frame_rect = [](float frame_num) -> Rectangle
+    {
+        return Rectangle{
+            .x = frame_num * 24.0f,
+            .y = 0.0f,
+            .width = 24.0f,
+            .height = 24.0f};
+    };
 
-	animation_map[IDLE] = {
-		make_player_frame_rect(0),
-		make_player_frame_rect(1),
-		make_player_frame_rect(2),
-	};
+    animation_map[IDLE] = {
+        make_player_frame_rect(0),
+        make_player_frame_rect(1),
+        make_player_frame_rect(2),
+    };
 
-	animation_map[WALK] = {
-		make_player_frame_rect(3),
-		make_player_frame_rect(4),
-		make_player_frame_rect(5),
-	};
+    animation_map[WALK] = {
+        make_player_frame_rect(3),
+        make_player_frame_rect(4),
+        make_player_frame_rect(5),
+    };
 
-	animation_map[JUMP_START] = {
-		make_player_frame_rect(6),
-	};
+    animation_map[JUMP_START] = {
+        make_player_frame_rect(6),
+    };
 
-	animation_map[JUMP_APEX] = {
-		make_player_frame_rect(7),
-	};
+    animation_map[JUMP_APEX] = {
+        make_player_frame_rect(7),
+    };
 
-	animation_map[JUMP_FALL] = {
-		make_player_frame_rect(8),
-	};
+    animation_map[JUMP_FALL] = {
+        make_player_frame_rect(8),
+    };
 }
 
 Player::~Player()
 {
-	UnloadTexture(this->sprite);
+    UnloadTexture(this->sprite);
 }
 
 void Player::update(float dt)
 {
-	const float horizontalDampeningFactor = 1;
+    // Update timers
+    if (jump_buffer_timer > 0)
+        jump_buffer_timer -= dt;
+    if (coyote_time_timer > 0)
+        coyote_time_timer -= dt;
 
-	animation_ticker -= dt;
-	if (animation_ticker <= 0)
-	{
-		animation_ticker = animation_frame_duration;
-		current_anim_frame += 1;
-	}
+    // Check for jump input - store it in the buffer
+    if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_SPACE))
+    {
+        jump_requested = true;
+        jump_buffer_timer = jump_buffer_time;
+    }
 
-	// dampen horizontal movement
-	set_velocity_x(body->GetLinearVelocity().x * (1 - dt * horizontalDampeningFactor));
+    // Handle animation timing
+    animation_ticker -= dt;
+    if (animation_ticker <= 0)
+    {
+        animation_ticker = animation_frame_duration;
+        current_anim_frame += 1;
+    }
 
-	check_if_on_floor();
-	check_if_move();
-	check_if_jump();
+    check_collisions();
+    check_portal_collisions();
+    handle_movement_states(dt);
+    apply_horizontal_movement(dt);
+    handle_jumping(dt);
+    update_animation_state();
+}
 
-	check_if_should_respawn();
+void Player::check_collisions()
+{
+    // Reset collision flags
+    is_touching_floor = false;
+    is_touching_wall_left = false;
+    is_touching_wall_right = false;
+
+    // Check floor collisions
+    const float x_deviations[] = {-0.4f, 0.0f, 0.4f};
+    for (auto x_dev : x_deviations)
+    {
+        // Query ground collision
+        auto source = body->GetPosition();
+        source.x += x_dev;
+
+        auto target = body->GetPosition();
+        target.x += x_dev;
+        target.y += 0.6f;
+
+        is_touching_floor = RaycastCheckCollisionWithUserData(
+            GameScene::world.get(),
+            source,
+            target,
+            PhysicsTypes::SolidBlock);
+
+        if (is_touching_floor)
+            break;
+    }
+
+    // Check left wall collision with multiple rays
+    float y_deviations[] = {-0.4f, 0.0f, 0.4f};
+    for (auto y_dev : y_deviations)
+    {
+        auto source = body->GetPosition();
+        source.y += y_dev;
+
+        auto target = body->GetPosition();
+        target.y += y_dev;
+        target.x -= 0.6f; // Check left side
+
+        is_touching_wall_left = RaycastCheckCollisionWithUserData(
+            GameScene::world.get(),
+            source,
+            target,
+            PhysicsTypes::SolidBlock);
+
+        if (is_touching_wall_left)
+            break;
+    }
+
+    for (auto y_dev : y_deviations)
+    {
+        auto source = body->GetPosition();
+        source.y += y_dev;
+
+        auto target = body->GetPosition();
+        target.y += y_dev;
+        target.x += 0.6f; // Check right side
+
+        is_touching_wall_right = RaycastCheckCollisionWithUserData(
+            GameScene::world.get(),
+            source,
+            target,
+            PhysicsTypes::SolidBlock);
+
+        if (is_touching_wall_right)
+            break;
+    }
+
+    // Update coyote time when leaving the ground
+    if (is_touching_floor)
+    {
+        coyote_time_timer = coyote_time; // Reset coyote time when on ground
+    }
+}
+
+void Player::check_portal_collisions()
+{
+    if (!body)
+        return;
+
+    b2AABB aabb;
+    b2Vec2 position = body->GetPosition();
+
+    float playerWidth = 0.45f;
+    float playerHeight = 0.45f;
+
+    aabb.lowerBound = b2Vec2(position.x - playerWidth, position.y - playerHeight);
+    aabb.upperBound = b2Vec2(position.x + playerWidth, position.y + playerHeight);
+
+    PortalQueryCallback callback;
+    world->QueryAABB(&callback, aabb);
+
+    is_touching_portal = callback.m_found;
+
+    if (callback.m_found && callback.m_portalData)
+    {
+        // store a direct reference to the portal data so we can use it later
+        currentPortal = callback.m_portalData;
+    }
+    else
+    {
+        // If we're not touching a portal, reset the current portal reference
+        ResetPortalStatus();
+    }
+}
+
+void Player::handle_movement_states(float dt)
+{
+    b2Vec2 velocity = body->GetLinearVelocity();
+
+    // Determine movement state based on collisions and velocity
+    if (is_touching_floor)
+    {
+        movement_state = GROUNDED;
+    }
+    else if (velocity.y < 0)
+    {
+        movement_state = JUMPING;
+    }
+    else
+    {
+        movement_state = FALLING;
+    }
+}
+
+void Player::apply_horizontal_movement(float dt)
+{
+    b2Vec2 velocity = body->GetLinearVelocity();
+    float target_x_velocity = 0.0f;
+
+    // Handle horizontal input
+    if (IsKeyDown(KEY_LEFT))
+    {
+        looking_right = false;
+        target_x_velocity = -move_speed;
+    }
+
+    if (IsKeyDown(KEY_RIGHT))
+    {
+        looking_right = true;
+        target_x_velocity = move_speed;
+    }
+
+    // Special case for wall collisions - don't inhibit horizontal movement when pressing against walls
+    // This allows the player to naturally fall down walls rather than clinging to them
+    if ((is_touching_wall_left && target_x_velocity < 0) ||
+        (is_touching_wall_right && target_x_velocity > 0))
+    {
+        // Still allow natural damping when not pressing movement keys
+        if (target_x_velocity == 0)
+        {
+            velocity.x *= horizontal_damping;
+            apply_velocity(velocity.x, velocity.y);
+        }
+        // Don't apply any horizontal velocity change when pressing against wall
+        // This allows the player to fall naturally down walls
+    }
+    else
+    {
+        // Normal movement when not against walls or moving away from them
+        if (target_x_velocity == 0)
+        {
+            velocity.x *= horizontal_damping;
+        }
+        else
+        {
+            velocity.x = target_x_velocity;
+        }
+
+        apply_velocity(velocity.x, velocity.y);
+    }
+}
+
+void Player::handle_jumping(float dt)
+{
+    b2Vec2 velocity = body->GetLinearVelocity();
+
+    bool can_jump = (is_touching_floor || coyote_time_timer > 0);
+
+    // Handle normal jumping
+    if (jump_requested && can_jump)
+    {
+        velocity.y = -jump_force;
+        jump_requested = false;
+        jump_buffer_timer = 0;
+        coyote_time_timer = 0;
+        movement_state = JUMPING;
+    }
+
+    // Execute jump if buffer is active and we hit the ground
+    if (jump_buffer_timer > 0 && is_touching_floor)
+    {
+        velocity.y = -jump_force;
+        jump_buffer_timer = 0;
+    }
+
+    // Apply final velocity
+    apply_velocity(velocity.x, velocity.y);
+
+    if (velocity.y < 0)
+    {
+        jump_requested = false;
+    }
+}
+
+void Player::apply_velocity(float vx, float vy)
+{
+    body->SetLinearVelocity({vx, vy});
 }
 
 void Player::draw()
 {
-	auto spritePosX = (body->GetPosition().x * GameConstants::PhysicsWorldScale) - 12;
-	auto spritePosY = (body->GetPosition().y * GameConstants::PhysicsWorldScale) - 13;
+    // First, get the player position in screen space (using the camera's physics scale)
+    Vector2 playerPosScreen = GameCamera::camera.PhysicsToScreen(body->GetPosition());
 
-	auto current_anim_states = animation_map[anim_state];
-	auto current_anim_rect = current_anim_states[current_anim_frame % current_anim_states.size()];
+    // Calculate the sprite position with offset. Center the 24x24 sprite on the
+    // physics position (physics position represents the center of the sprite)
+    Vector2 screenPos = {
+        playerPosScreen.x - 12, // Center horizontally (half of sprite width)
+        playerPosScreen.y - 12  // Center vertically (half of sprite height)
+    };
 
-	if (!looking_right)
-	{
-		current_anim_rect.width *= -1;
-	}
+    screenPos.y -= 1; // Slight upward adjustment for better visual alignment
 
-	DrawTexturePro(sprite,
-				   current_anim_rect,
-				   {spritePosX, spritePosY, 24, 24},
-				   {0, 0},
-				   0.0f,
-				   WHITE);
+    auto current_anim_states = animation_map[anim_state];
+    auto current_anim_rect = current_anim_states[current_anim_frame % current_anim_states.size()];
+
+    if (!looking_right)
+    {
+        current_anim_rect.width *= -1;
+    }
+
+    DrawTexturePro(sprite,
+                   current_anim_rect,
+                   {screenPos.x, screenPos.y, 24, 24},
+                   {0, 0},
+                   0.0f,
+                   WHITE);
+
+// Debug visualization
+#ifdef DEBUG
+    // Draw collision points for floor and walls
+    if (is_touching_floor)
+    {
+        DrawCircle(playerPosScreen.x, playerPosScreen.y + 10, 2, GREEN);
+    }
+
+    if (is_touching_wall_left)
+    {
+        DrawCircle(playerPosScreen.x - 10, playerPosScreen.y, 2, RED);
+    }
+
+    if (is_touching_wall_right)
+    {
+        DrawCircle(playerPosScreen.x + 10, playerPosScreen.y, 2, RED);
+    }
+#endif
 }
 
-void Player::init_for_level(const ldtk::Entity *entity, b2World *physicsWorld)
+void Player::reset_physics_for_level(b2World *physicsWorld)
 {
-	auto pos = entity->getPosition();
+    // Store the old world reference before destroying it
+    world = physicsWorld;
 
-	DebugUtils::println("Setting player position to x:{} and y:{}", pos.x, pos.y);
+    b2BodyDef bodyDef;
+    bodyDef.type = b2_dynamicBody;
+    bodyDef.fixedRotation = true;
+    bodyDef.allowSleep = false;
 
-	level_spawn_position = {(float)pos.x / GameConstants::PhysicsWorldScale,
-							(float)pos.y / GameConstants::PhysicsWorldScale};
+    this->body = physicsWorld->CreateBody(&bodyDef);
 
-	b2BodyDef bodyDef;
-	bodyDef.type = b2_dynamicBody;
-	bodyDef.fixedRotation = true;
-	bodyDef.position.Set(level_spawn_position.x, level_spawn_position.y);
+    b2PolygonShape dynamicBox;
+    dynamicBox.SetAsBox(0.45f, 0.45f); // Slightly smaller hitbox for better collision
 
-	this->body = physicsWorld->CreateBody(&bodyDef);
+    b2FixtureDef fixtureDef;
+    fixtureDef.shape = &dynamicBox;
+    fixtureDef.density = 1.0f;
+    fixtureDef.friction = 0.1f;
+    fixtureDef.restitution = 0.0f;
 
-	b2PolygonShape dynamicBox;
-	dynamicBox.SetAsBox(0.9, 1);
+    fixture = body->CreateFixture(&fixtureDef);
 
-	b2FixtureDef fixtureDef;
-	fixtureDef.shape = &dynamicBox;
-	fixtureDef.density = 1.0f;
-	fixtureDef.friction = 10.0f;
+    // Reset all movement state when recreating physics
+    movement_state = FALLING;
+    is_touching_floor = false;
+    is_touching_wall_left = false;
+    is_touching_wall_right = false;
+    jump_requested = false;
+    jump_buffer_timer = 0.0f;
+    coyote_time_timer = 0.0f;
 
-	body->CreateFixture(&fixtureDef);
+    // Reset portal status and cooldown
+    is_touching_portal = false;
+    currentPortal = nullptr;
 }
 
-void Player::set_velocity_x(float vx)
+void Player::update_animation_state()
 {
-	body->SetLinearVelocity({
-		vx,
-		body->GetLinearVelocity().y,
-	});
+    // Update animation state based on movement state and velocity
+    b2Vec2 velocity = body->GetLinearVelocity();
+
+    switch (movement_state)
+    {
+    case GROUNDED:
+        if (abs(velocity.x) > 0.5f)
+        {
+            anim_state = WALK;
+        }
+        else
+        {
+            anim_state = IDLE;
+        }
+        break;
+
+    case JUMPING:
+        anim_state = JUMP_START;
+        break;
+
+    case FALLING:
+        if (velocity.y > 5.0f)
+        {
+            anim_state = JUMP_FALL;
+        }
+        else
+        {
+            anim_state = JUMP_APEX;
+        }
+        break;
+    }
 }
 
-void Player::set_velocity_y(float vy)
+b2Vec2 Player::GetPosition() const
 {
-	body->SetLinearVelocity({
-		body->GetLinearVelocity().x,
-		vy,
-	});
+    if (body)
+    {
+        return body->GetPosition();
+    }
+    return {0.0f, 0.0f};
 }
 
-void Player::set_velocity_xy(float vx, float vy)
+void Player::ResetPortalStatus()
 {
-	body->SetLinearVelocity({vx, vy});
+    is_touching_portal = false;
+    currentPortal = nullptr;
 }
 
-void Player::check_if_on_floor()
+void Player::teleport_to(const b2Vec2 &position)
 {
-	// first, reset whether we're touching floor
-	is_touching_floor = false;
+    if (body)
+    {
+        DebugUtils::println("Teleporting player to physics position: {}, {}", position.x, position.y);
 
-	// check left, center, and right touch points
-	float x_deviations[] = {-1.0f, 0.0f, 1.0f};
+        body->SetLinearVelocity({0, 0});
+        body->SetTransform(position, 0);
 
-	for (auto x_dev : x_deviations)
-	{
-		// query raylib to see if we're touching floor
-		auto source = body->GetPosition();
-		source.x += x_dev;
+        // Calculate screen position for debugging
+        Vector2 screenPos = GameCamera::camera.PhysicsToScreen(position);
 
-		auto target = body->GetPosition();
-		target.x += x_dev;
-		target.y += 1.1;
-
-		is_touching_floor = RaycastCheckCollisionWithUserData(
-			GameScene::world.get(),
-			source,
-			target,
-			PhysicsTypes::SolidBlock);
-
-		if (is_touching_floor)
-		{
-			break;
-		}
-	}
-}
-
-bool Player::can_move_in_x_direction(bool moving_right)
-{
-	float y_deviations[] = {-1.0f, 0.0f, 1.0f};
-	for (auto y_dev : y_deviations)
-	{
-		// query raylib to see if we're touching floor
-		auto source = body->GetPosition();
-		source.y += y_dev;
-
-		auto target = body->GetPosition();
-		target.y += y_dev;
-
-		// check left side if necessary
-		target.x += (moving_right ? 1 : -1) * 1.1;
-
-		auto is_agains_wall = RaycastCheckCollisionWithUserData(
-			GameScene::world.get(),
-			source,
-			target,
-			PhysicsTypes::SolidBlock);
-
-		if (is_agains_wall)
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-void Player::check_if_jump()
-{
-	if (is_touching_floor && (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_SPACE)))
-	{
-		set_velocity_y(-25);
-	}
-
-	if (abs(body->GetLinearVelocity().x) > 0)
-	{
-		anim_state = WALK;
-	}
-	else
-	{
-		anim_state = IDLE;
-	}
-
-	if (!is_touching_floor)
-	{
-		auto vel = body->GetLinearVelocity().y;
-		const int jump_threshold = 5;
-
-		if (vel > jump_threshold)
-		{
-			anim_state = JUMP_FALL;
-		}
-		else if (vel < -jump_threshold)
-		{
-			anim_state = JUMP_START;
-		}
-		else
-		{
-			anim_state = JUMP_APEX;
-		}
-	}
-}
-
-void Player::check_if_move()
-{
-	const auto effective_speed = 15.0f;
-	if (IsKeyDown(KEY_LEFT) && can_move_in_x_direction(false))
-	{
-		looking_right = false;
-		set_velocity_x(-effective_speed);
-	}
-
-	if (IsKeyDown(KEY_RIGHT) && can_move_in_x_direction(true))
-	{
-		looking_right = true;
-		set_velocity_x(effective_speed);
-	}
-}
-
-void Player::check_if_should_respawn()
-{
-	auto body_pos = body->GetPosition();
-	auto is_out_of_x = body_pos.x < 0 || body_pos.x * GameConstants::PhysicsWorldScale > GameConstants::WorldWidth;
-	auto is_out_of_y = body_pos.y < 0 || body_pos.y * GameConstants::PhysicsWorldScale > GameConstants::WorldHeight;
-
-	if (is_out_of_x || is_out_of_y)
-	{
-		set_velocity_xy(0, 0);
-		body->SetTransform(level_spawn_position, 0);
-	}
+        // Reset any movement state variables
+        movement_state = FALLING;
+        jump_requested = false;
+        jump_buffer_timer = 0.0f;
+        coyote_time_timer = 0.0f;
+    }
 }

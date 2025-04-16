@@ -8,6 +8,7 @@
 #include <raygui.h>
 
 #include <Constants.hpp>
+#include "utils/Camera.hpp"
 
 #include "entities/Player/Player.hpp"
 #include "scenes/SceneManager.hpp"
@@ -27,6 +28,9 @@ int main()
 
 	// Create render texture at game resolution (not screen resolution)
 	gameRenderTexture = LoadRenderTexture(GameConstants::WorldWidth, GameConstants::WorldHeight);
+	
+	// Initialize the camera with the physics scale factor (16.0f / ScreenScale)
+	GameCamera::camera.SetPhysicsScale(16.0f);
 
 	SceneManager::initialize();
 	SceneManager::set_current_screen(Scenes::TITLE);
@@ -46,7 +50,6 @@ int main()
 
 	SceneManager::cleanup();
 	UnloadRenderTexture(gameRenderTexture);
-	CloseWindow();
 	return 0;
 }
 

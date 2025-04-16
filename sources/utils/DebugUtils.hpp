@@ -8,22 +8,21 @@
 #include <fmt/core.h>
 
 #include <Constants.hpp>
+#include "Camera.hpp"
 
 using namespace std;
 
 namespace DebugUtils
 {
-    inline void draw_physics_objects_bounding_boxes(b2World *const world)
+    inline void draw_physics_objects_bounding_boxes(const b2World *world)
     {
 #ifdef DEBUG
         auto currentBody = world->GetBodyList();
         while (currentBody != nullptr)
         {
             auto pos = currentBody->GetPosition();
-            DrawCircle(pos.x * GameConstants::PhysicsWorldScale,
-                       pos.y * GameConstants::PhysicsWorldScale,
-                       2,
-                       PURPLE);
+            Vector2 screenPos = GameCamera::camera.PhysicsToScreen(pos);
+            DrawCircle(screenPos.x, screenPos.y, 2, PURPLE);
 
             auto fixture = currentBody->GetFixtureList();
             while (fixture != nullptr)
@@ -40,9 +39,10 @@ namespace DebugUtils
                     int jj = (((j + 1) < vertexCount) ? (j + 1) : 0); // Get next vertex or first to close the shape
                     b2Vec2 vertexB = polygonShape->m_vertices[jj];
 
-                    DrawLineV({(pos.x + vertexA.x) * GameConstants::PhysicsWorldScale, (pos.y + vertexA.y) * GameConstants::PhysicsWorldScale},
-                              {(pos.x + vertexB.x) * GameConstants::PhysicsWorldScale, (pos.y + vertexB.y) * GameConstants::PhysicsWorldScale},
-                              GREEN); // Draw a line between two vertex positions
+                    Vector2 pointA = GameCamera::camera.PhysicsToScreen({pos.x + vertexA.x, pos.y + vertexA.y});
+                    Vector2 pointB = GameCamera::camera.PhysicsToScreen({pos.x + vertexB.x, pos.y + vertexB.y});
+
+                    DrawLineV(pointA, pointB, GREEN); // Draw a line between two vertex positions
                 }
 
                 fixture = fixture->GetNext();

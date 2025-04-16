@@ -2,16 +2,13 @@
 
 #include <box2d/box2d.h>
 #include <string>
+#include "../scenes/GameScene/GameScene.hpp"
 
 using namespace std;
 
 class RaysCastGetNearestCallback : public b2RayCastCallback
 {
 public:
-    RaysCastGetNearestCallback() : m_fixture(NULL)
-    {
-    }
-
     float ReportFixture(b2Fixture *fixture, const b2Vec2 &point, const b2Vec2 &normal, float fraction)
     {
         m_fixture = fixture;
@@ -29,12 +26,12 @@ public:
 
 b2Fixture *RaycastGetFirstFixtureFromSourceToTarget(b2World *world, b2Vec2 source, b2Vec2 target)
 {
-    // query raylib to see if we're touching floor
+    // Use the world parameter instead of directly accessing GameScene::world
     RaysCastGetNearestCallback raycastCallback;
 
-    GameScene::world->RayCast(&raycastCallback,
-                              source,
-                              target);
+    world->RayCast(&raycastCallback,
+                  source,
+                  target);
 
     return raycastCallback.m_fixture;
 }
@@ -59,8 +56,15 @@ bool RaycastCheckCollisionWithUserData(b2World *world, b2Vec2 source, b2Vec2 tar
 
         if (collision_body->GetUserData().pointer)
         {
-            string body_user_data = (char *)collision_body->GetUserData().pointer;
-            return body_user_data == expected_user_data;
+            // Safely handle user data based on its intended type
+            // For solid blocks, the user data is a string pointer
+            const char* userData = reinterpret_cast<const char*>(collision_body->GetUserData().pointer);
+            
+            // Make sure the pointer is valid before dereferencing
+            if (userData) {
+                string body_user_data = userData;
+                return body_user_data == expected_user_data;
+            }
         }
     }
 
